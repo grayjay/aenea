@@ -29,7 +29,7 @@ abstract class AbstractHandler implements RequestHandler {
     } else if (mParamsType == JSONRPC2ParamsType.OBJECT) {
       Map<String, Object> mNamedParams = aRequest.getNamedParams();
       NamedParamsRetriever mRetriever = new NamedParamsRetriever(mNamedParams);
-      Map<Parameter, Object> mArgs = new HashMap();
+      Map<Parameter, Object> mArgs = new HashMap<>();
       try {
         for (Parameter mRequired : getRequiredParams()) {
           mArgs.put(mRequired, mRetriever.get(mRequired.getName(), mRequired.getType()));

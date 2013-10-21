@@ -49,7 +49,7 @@ public class KeyPressHandler extends AbstractHandler {
       int aCount,
       int aDelay) {
     Key mKey = WindowsKeys.getKey(aKey);
-    Collection<Key> mModifiers = new ArrayList();
+    Collection<Key> mModifiers = new ArrayList<>();
     for (String mModifier : aModifiers) {
       mModifiers.add(WindowsKeys.getKey(mModifier));
     }

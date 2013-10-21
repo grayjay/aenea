@@ -12,7 +12,7 @@ public class GetContextHandler extends AbstractHandler {
 
   @Override
   protected Object process(Map<Parameter, Object> aArgs) {
-    Map<String, Object> mResult = new HashMap();
+    Map<String, Object> mResult = new HashMap<>();
     mResult.put("id", "");
     mResult.put("title", "");
     return mResult;

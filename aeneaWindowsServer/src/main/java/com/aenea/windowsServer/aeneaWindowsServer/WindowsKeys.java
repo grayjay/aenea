@@ -246,18 +246,18 @@ public class WindowsKeys {
   private static final Map<String, Direction> myDirectionMap;
 
   static {
-    myKeyNameMap = new HashMap();
+    myKeyNameMap = new HashMap<>();
     for (Key mKey : Key.values()) {
       myKeyNameMap.put(mKey.getName(), mKey);
     }
-    myKeyCharMap = new HashMap();
+    myKeyCharMap = new HashMap<>();
     for (Key mKey : Key.values()) {
       Character mChar = mKey.getCharacter();
       if (mChar != null) {
         myKeyCharMap.put(mKey.getCharacter(), mKey);
       }
     }
-    myDirectionMap = new HashMap();
+    myDirectionMap = new HashMap<>();
     for (Direction mDirection : Direction.values()) {
       myDirectionMap.put(mDirection.name().toLowerCase(), mDirection);
     }
@@ -305,7 +305,7 @@ public class WindowsKeys {
       }
       Collection<Key> mModifiers = null;
       if (aKey.requiresShift()) {
-        mModifiers = new HashSet(aModifiers);
+        mModifiers = new HashSet<>(aModifiers);
         mModifiers.add(Key.SHIFT);
       } else mModifiers = aModifiers;
       try {
