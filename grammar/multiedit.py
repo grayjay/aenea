@@ -21,23 +21,44 @@
 # Windows mode. (Don't forget, it has to be called _multiedit, so if you're
 # not using the reloadconfig module you'll need to rename manually.)
 
+ENABLE_ECLIPSE_COMMANDS = True
+ENABLE_VIM_COMMANDS = True
+ENABLE_PYTHON_COMMANDS = True
+
 import raul
 
 try:
-    import pkg_resources
+  import pkg_resources
 
-    pkg_resources.require("dragonfly >= 0.6.5beta1.dev-r99")
+  pkg_resources.require("dragonfly >= 0.6.5beta1.dev-r99")
 except ImportError:
-    pass
+  pass
 
-from dragonfly import Config, Section, Item, MappingRule, CompoundRule, Grammar, IntegerRef, Dictation, RuleRef, Alternative, Repetition, Literal, Sequence, Key, Text, AppContext
+from dragonfly import (
+    Alternative,
+    AppContext,
+    CompoundRule,
+    Dictation,
+    Grammar,
+    IntegerRef,
+    Key,
+    Literal,
+    MappingRule,
+    Repetition,
+    RuleRef,
+    Sequence,
+    Text,
+  )
 
-import config
+try:
+  from config import PLATFORM
+except ImportError:
+  PLATFORM = "windows"
 
-if config.PLATFORM == "proxy":
+if PLATFORM == "proxy":
   import aenea
   from proxy_nicknames import *
-  vim_context = AppRegexContext(name="(?i).*VIM.*")
+  vim_context = AppContext(match="regex", title=".*VIM.*")
   disable_context = vim_context
   global_context = aenea.global_context
 else:
@@ -52,87 +73,91 @@ def Nested(command):
   return Text(command) + Key("left:%i" % (len(command) / 2))
 
 command_table = {
-  # Spoken-form        normal command              VIM (can set to None if same as normal)
+  # Spoken-form        normal command              VIM (None if same)
 
   #### Cursor manipulation
   "up [<n>]":(         Key("up:%(n)d"),            Key("escape") + Text("%(n)dki") ),
   "down [<n>]":(       Key("down:%(n)d"),          Key("escape") + Text("%(n)dji") ),
   "left [<n>]":(       Key("left:%(n)d"),          None),
   "right [<n>]":(      Key("right:%(n)d"),         None),
+
   "gope [<n>]":(       Key("pgup:%(n)d"),          None),
   "drop [<n>]":(       Key("pgdown:%(n)d"),        None),
+
   "lope [<n>]":(       Key("c-left:%(n)d"),        Key("escape") + Text("%(n)dbi") ),
   "yope [<n>]":(       Key("c-right:%(n)d"),       Key("escape") + Text("%(n)dwwi") ),
+
   "care":(             Key("home"),                None),
   "doll":(             Key("end"),                 None),
+
   "file top":(         Key("c-home"),              Key("escape, 1, s-g, i") ),
   "file toe":(         Key("c-end"),               Key("escape, s-g, i") ),
 
   #### Various keys
   "ace [<n>]":(        Key("space:%(n)d"),         None),
-  "tab [<n>]":(        Key("tab:%(n)d"),           None),
-  "slap [<n>]":(       Key("enter:%(n)d"),         None),
+  "act":(              Key("escape"),              None),
   "chuck [<n>]":(      Key("del:%(n)d"),           None),
   "scratch [<n>]":(    Key("backspace:%(n)d"),     None),
-  "act":(              Key("escape"),              None),
+  "slap [<n>]":(       Key("enter:%(n)d"),         None),
+  "tab [<n>]":(        Key("tab:%(n)d"),           None),
 
   #### Symbols
   "amp [<n>]":(        Key("ampersand:%(n)d"),     None),
-  "star [<n>]":(       Key("asterisk:%(n)d"),      None),
+  "ash [<n>]":(        Key("slash:%(n)d"),         None),
   "at sign [<n>]":(    Key("at:%(n)d"),            None),
   "back ash [<n>]":(   Key("backslash:%(n)d"),     None),
   "backtick [<n>]":(   Key("backtick:%(n)d"),      None),
+  "bang [<n>]":(       Key("exclamation:%(n)d"),   None),
   "bar [<n>]":(        Key("bar:%(n)d"),           None),
-  "hat [<n>]":(        Key("caret:%(n)d"),         None),
-  "yeah [<n>]":(       Key("colon:%(n)d"),         None),
-  "drip [<n>]":(       Key("comma:%(n)d"),         None),
+  "cross [<n>]":(      Key("plus:%(n)d"),          None),
   "dollar [<n>]":(     Key("dollar:%(n)d"),        None),
   "dot [<n>]":(        Key("dot:%(n)d"),           None),
-  "quote [<n>]":(      Key("dquote:%(n)d"),        None),
+  "drip [<n>]":(       Key("comma:%(n)d"),         None),
   "eek [<n>]":(        Key("equal:%(n)d"),         None),
-  "bang [<n>]":(       Key("exclamation:%(n)d"),   None),
-  "pound [<n>]":(      Key("hash:%(n)d"),          None),
+  "hat [<n>]":(        Key("caret:%(n)d"),         None),
   "hyph [<n>]":(       Key("hyphen:%(n)d"),        None),
   "percent [<n>]":(    Key("percent:%(n)d"),       None),
-  "cross [<n>]":(      Key("plus:%(n)d"),          None),
-  "quest [<n>]":(      Key("question:%(n)d"),      None),
-  "ash [<n>]":(        Key("slash:%(n)d"),         None),
-  "smote [<n>]":(      Key("squote:%(n)d"),        None),
-  "tilde [<n>]":(      Key("tilde:%(n)d"),         None),
-  "rail [<n>]":(       Key("underscore:%(n)d"),    None),
-  "push [<n>]":(       Key("lparen:%(n)d"),        None),
   "pop [<n>]":(        Key("rparen:%(n)d"),        None),
+  "pound [<n>]":(      Key("hash:%(n)d"),          None),
+  "push [<n>]":(       Key("lparen:%(n)d"),        None),
+  "quest [<n>]":(      Key("question:%(n)d"),      None),
+  "quote [<n>]":(      Key("dquote:%(n)d"),        None),
+  "rail [<n>]":(       Key("underscore:%(n)d"),    None),
+  "semi [<n>]":(       Key("semicolon:%(n)d"),     None),
+  "smote [<n>]":(      Key("squote:%(n)d"),        None),
+  "star [<n>]":(       Key("asterisk:%(n)d"),      None),
+  "tilde [<n>]":(      Key("tilde:%(n)d"),         None),
+  "yeah [<n>]":(       Key("colon:%(n)d"),         None),
 
   #### Nested
+  "box":(              Nested("{}"),               None),
   "circle":(           Nested("()"),               None),
-  "square":(           Nested("[]"),               None),
-  "box":(              Nested("[]"),               None),
   "diamond":(          Nested("<>"),               None),
-  "hexy":(             Nested("{}"),               None),
   "nest quote":(       Nested("\"\""),             None),
   "nest smote":(       Nested("''"),               None),
+  "square":(           Nested("[]"),               None),
 
   # Spoken-form      normal command       VIM (can set to None if same as normal)
 
   #### Lines
-  "wipe [<n>]":(     Key("home, shift:down, down:%(n)d, up, end, del, shift:up, backspace"),
-                                          Key("escape") + Text("d%(n)ddi") ),
-  "strip":(          Key("s-end, del"),
-                                          Key("escape, l, d, dollar, a") ),
-  "striss":(         Key("s-home, del"),
-                                          Key("escape, l, d, caret, i") ),
-  "nab [<n>]":(      Key("home, shift:down, down:%(n)d, up, end, shift:up, c-c, end"),
+  "line down [<n>]":(Key("home:2, shift:down, end:2, shift:up, c-x, del, down:%(n)d, home:2, enter, up, c-v"),
+                                          Key("escape") + Text("dd%(n)dj") + Key("home:2, 1, P, i") ),
+  "lineup [<n>]":(   Key("home:2, shift:down, end:2, shift:up, c-x, del, up:%(n)d, home:2, enter, up, c-v"),
+                                          Key("escape") + Text("dd%(n)dk") + Key("home:2, 1, P, i") ),
+  "nab [<n>]":(      Key("home:2, shift:down, down:%(n)d, up, end:2, shift:up, c-c, end:2"),
                                           Key("escape") + Text("y%(n)dyi") ),
   "plop [<n>]":(     Key("c-v:%(n)d"),
                                           Key("escape, dollar") + Text("%(n)dpi") ),
-  "trance [<n>]":(   Key("home, shift:down, down:%(n)d, up, end, shift:up, c-c, end, enter, c-v"),
-                                          Key("escape") + Text("y%(n)dy%(n)djkpi") ),
-  "lineup [<n>]":(   Key("home, shift:down, end, shift:up, c-x, del, up:%(n)d, home, enter, up, c-v"),
-                                          Key("escape") + Text("dd%(n)dk") + Key("home, 1, P, i") ),
-  "line down [<n>]":(Key("home, shift:down, end, shift:up, c-x, del, down:%(n)d, home, enter, up, c-v"),
-                                          Key("escape") + Text("dd%(n)dj") + Key("home, 1, P, i") ),
-  "squishy [<n>]":(  Key("end, del, space"),
+  "squishy [<n>]":(  Key("end:2, del, space"),
                                           Key("escape") + Text("%(n)dJi") ),
+  "strip":(          Key("s-end:2, del"),
+                                          Key("escape, l, d, dollar, a") ),
+  "striss":(         Key("s-home:2, del"),
+                                          Key("escape, l, d, caret, i") ),
+  "trance [<n>]":(   Key("home:2, shift:down, down:%(n)d, up, end:2, shift:up, c-c, end:2, enter, c-v"),
+                                          Key("escape") + Text("y%(n)dy%(n)djkpi") ),
+  "wipe [<n>]":(     Key("home:2, shift:down, down:%(n)d, up, end:2, del, shift:up, backspace"),
+                                          Key("escape") + Text("d%(n)ddi") ),
 
   #### Words
   "bump [<n>]":(     Key("cs-right:%(n)d, del"),
@@ -208,6 +233,53 @@ python_command_table = {
   "compare lack":(     Text("<= "),                None),
   }
 
+# Eclipse only commands
+eclipse_command_table = {
+  # Spoken-form        normal command              VIM (can set to None if same as normal)
+  "save file":(        Key("c-s"),                 None),
+  "save all":(         Key("a-s"),                 None),
+  "popup":(            Key("apps"),                None),
+  "close tab":(        Key("c-w"),                 None),
+  "close all tabs":(   Key("cs-w"),                None),
+  "move tab left [<n>]":(Key("c-pgup:%(n)d"),      None),
+  "move tab right [<n>]":(Key("c-pgdown:%(n)d"),   None),
+  "cut that":(         Key("c-x"),                 None),
+  "copy that":(        Key("c-c"),                 None),
+  "who calls":(        Key("ca-h"),                None),
+  "link":(             Key("f3"),                  None),
+  "refresh":(          Key("f5"),                  None),
+  "hierarchy":(        Key("c-t"),                 None),
+  "open type":(        Key("cs-t"),                None),
+  "open resource":(    Key("ca-r"),                None),
+  "rename":(           Key("cs-r"),                None),
+  "correct":(          Key("c-1"),                 None),
+  "organize imports":( Key("cs-o"),                None),
+  "new java docs":(    Key("sa-j"),                None),
+  "find":(             Key("c-f"),                 None),
+  "go home":(          Key("home:2"),              None),
+  "go end":(           Key("end:2"),               None),
+  "pair":(             Key("cs-p"),                None),
+  "chirp":(            Key("c-q"),                 None),
+  "choices":(          Key("c-space"),             None),
+  "complete [<n>]":(   Key("a-slash:%(n)d"),       None),
+  "undo [<n>]":(       Key("c-z:%(n)d"),           None),
+  "redo [<n>]":(       Key("c-y:%(n)d"),           None),
+  "spike [<n>]":(      Key("sc-up:%(n)d"),         None),
+  "mud [<n>]":(        Key("sc-down:%(n)d"),       None),
+  "block [<n>]":(      Key("sa-w:%(n)d"),          None),
+  "shrink [<n>]":(     Key("sa-s:%(n)d"),          None),
+  "squirt [<n>]":(     Key("sa-a:%(n)d"),          None),
+  "glide [<n>]":(      Key("a-d:%(n)d"),           None),
+  "slip [<n>]":(       Key("a-a:%(n)d"),           None),
+  "slug [<n>]":(       Key("c-dot:%(n)d"),         None),
+  "snail [<n>]":(      Key("c-comma:%(n)d"),       None),
+  "stint [<n>]":(      Key("f5:%(n)d"),            None),
+  "stover [<n>]":(     Key("f6:%(n)d"),            None),
+  "stout [<n>]":(      Key("f7:%(n)d"),            None),
+  "step continue":(    Key("f8"),                  None),
+  "perspective [<n>]":(Key("ctrl:down, f8:%(n)d, ctrl:up"), None),
+  "view [<n>]":(       Key("ctrl:down, f7:%(n)d, ctrl:up"), None),
+  }
 def format_snakeword(text):
   return text[0][0].upper() + text[0][1:] + ("_" if len(text) > 1 else "") + format_score(text[1:])
 
@@ -244,8 +316,11 @@ def format_natword(text):
 def format_broodingnarrative(text):
   return ""
 
+def format_sentence(text):
+  return " ".join([text[0].capitalize()] + text[1:])
+
 class FormatRule(CompoundRule):
-  spec = ("[upper | natural] ( proper | camel | rel-path | abs-path | score | "
+  spec = ("[upper | natural] ( proper | camel | rel-path | abs-path | score | sentence | "
           "scope-resolve | jumble | dotword | dashword | natword | snakeword | brooding-narrative) [<dictation>]")
   extras = [Dictation(name="dictation")]
   
@@ -269,8 +344,14 @@ class FormatRule(CompoundRule):
 
     return Text(formatted)
 
-# Set up vim default values.
-for table in (command_table, python_command_table):
+# Set up optional rules (VIM, Eclipse, etc).
+tables = []
+if ENABLE_ECLIPSE_COMMANDS:
+  tables.append(eclipse_command_table)
+if ENABLE_PYTHON_COMMANDS:
+  tables.append(python_command_table)
+tables.append(command_table)
+for table in tables:
   for (key, (command, vim_command)) in table.iteritems():
     if vim_command is None:
       table[key] = (command, command)
@@ -309,8 +390,10 @@ class KeystrokeRule(MappingRule):
 #  Note: when processing a recognition, the *value* of this element
 #  will be the value of the referenced rule: an action.
 
+for table in tables:
+  command_table.update(table)
+
 mapping = dict((key, value[0]) for (key, value) in command_table.iteritems())
-command_table.update(python_command_table)
 vim_mapping = dict((key, value[1]) for (key, value) in command_table.iteritems())
 vim_mapping.update(vim_command_table)
 
@@ -329,9 +412,12 @@ single_action = Alternative(alternatives)
 vim_single_action = Alternative(vim_alternatives)
 
 # Can only be used as the last element
-alphabet_mapping = dict((key, Text(value)) for (key, value) in raul.LETTERS.iteritems())
-numbers_mapping = dict((key, Text(value)) for (key, value) in raul.DIGITS.iteritems())
-alphanumeric_mapping = dict((key, Text(value)) for (key, value) in raul.ALPHANUMERIC.iteritems())
+alphabet_mapping = dict((key, Text(value))
+                        for (key, value) in raul.LETTERS.iteritems())
+numbers_mapping = dict((key, Text(value))
+                        for (key, value) in raul.DIGITS.iteritems())
+alphanumeric_mapping = dict((key, Text(value))
+                        for (key, value) in raul.ALPHANUMERIC.iteritems())
 
 alphabet_rule = Sequence([Literal("letters"), Repetition(RuleRef(name="x", rule=MappingRule(name="t", mapping=alphabet_mapping)), min=1, max=20)])
 numbers_rule = Sequence([Literal("digits"), Repetition(RuleRef(name="y", rule=MappingRule(name="u", mapping=numbers_mapping)), min=1, max=20)])
@@ -406,8 +492,9 @@ class RepeatRule(CompoundRule):
 #---------------------------------------------------------------------------
 # Create and load this module's grammar.
 
-grammar = Grammar("multi edit", context=global_context & ~disable_context)
-grammar.add_rule(RepeatRule(extras=vim_extras + [format_rule, Alternative(finishes, name="finish")], name="b", context=vim_context))
+grammar = Grammar("multiedit", context=global_context & ~disable_context)
+if ENABLE_VIM_COMMANDS:
+  grammar.add_rule(RepeatRule(extras=vim_extras + [format_rule, Alternative(finishes, name="finish")], name="b", context=vim_context))
 grammar.add_rule(RepeatRule(extras=extras + [format_rule, Alternative(finishes, name="finish")], name="a", context=(~vim_context)))
 grammar.add_rule(LiteralRule())
 
@@ -416,5 +503,6 @@ grammar.load()
 # Unload function which will be called at unload time.
 def unload():
   global grammar
-  if grammar: grammar.unload()
+  if grammar:
+    grammar.unload()
   grammar = None

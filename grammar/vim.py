@@ -1,9 +1,18 @@
-from dragonfly import (Grammar, CompoundRule, Choice, Dictation, List, Optional, Literal, Context, MappingRule, IntegerRef, Pause)
-import natlink, os, time
+from dragonfly import (
+    AppContext,
+    Dictation,
+    Grammar,
+    IntegerRef,
+    Key,
+    MappingRule,
+    Pause,
+    RuleRef,
+    Text,
+  )
 
-from proxy_nicknames import Key, Text, AppRegexContext
+import config
 
-from raul import SelfChoice, processDictation, NUMBERS as numbers
+from raul import LETTERS
 
 import aenea
 
@@ -13,12 +22,19 @@ leader = Key(LEADER_KEY)
 escape = Key("escape")
 escape_leader = escape + Pause("30") + leader
 
-vim_context = aenea.global_context & AppRegexContext(name="(?i)^.* vim$")
+if config.PLATFORM == "proxy":
+  from proxy_nicknames import Key, Text, AppContext
+  vim_context = AppContext(match="regex", title="(?i).*VIM.*")
+  command_t_context = AppContext(match="regex", title="^GoToFile.*$") & vim_context
+  fugitive_index_context = AppContext(match="regex", title="^index.*\.git.*$") & vim_context
+  global_context = vim_context & aenea.global_context
+else:
+  vim_context = AppContext(title="VIM")
+  command_t_context = AppContext(title="GoToFile") & vim_context
+  fugitive_index_context = AppContext(title="index") & AppContext(".git") & vim_context
+  global_context = vim_context
 
-command_t_context = AppRegexContext(name="^GoToFile.*$") & vim_context
-fugitive_index_context = AppRegexContext(name="^index.*\.git.*$") & vim_context
-
-grammar = Grammar("vim", context=vim_context)
+grammar = Grammar("vim", context=global_context)
 
 class EasyMotion(MappingRule):
   mapping = {"easy jump [start] [<place>]":escape_leader + leader + Key("W") + Text("%(place)s"),
@@ -81,12 +97,21 @@ class VimCommand(MappingRule):
   extras = [IntegerRef("number", 1, 1000), Dictation("text")]
   defaults = {"text":"", "number":1}
 
+class MacroCommand(MappingRule):
+  mapping = {
+      "rec ripple <LetterMapping>":Key("q, %(LetterMapping)s"),
+      "end ripple":Key("q"),
+#      "[<count>] ripple <LetterMapping>":Text("%(count)d@%(LetterMapping)s"),
+    }
+  extras = [RuleRef(MappingRule(mapping=LETTERS, name="maplet"), name="LetterMapping")]
+
 grammar.add_rule(EasyMotion())
 grammar.add_rule(VimCommand())
 grammar.add_rule(LustyJuggler())
 grammar.add_rule(LustyExplorer())
 grammar.add_rule(CommandT())
 grammar.add_rule(Fugitive())
+grammar.add_rule(MacroCommand())
 
 grammar.load()
 

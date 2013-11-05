@@ -1,11 +1,10 @@
-from dragonfly import (Grammar, AppContext, MappingRule)
+from dragonfly import Grammar, MappingRule
 
 import aenea
 
-grammar_context = AppContext(executable="notepad")
-grammar = Grammar("awesome", context=grammar_context)
-
 from proxy_nicknames import Key
+
+grammar = Grammar("awesome", context=aenea.global_context)
 
 awesome = "w"
 

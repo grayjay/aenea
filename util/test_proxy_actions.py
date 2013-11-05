@@ -3,96 +3,98 @@ import sys
 import unittest
 import mock
 
-import proxy_actions
-from proxy_actions import *
+import util.proxy_actions
+from util.proxy_actions import *
 
-import comsat
-
-from functools import partial
-
-class MockComsat(object):
-  raw = []
-  def __init__(self):
-    self.proxy = mock.MagicMock()
-    self.proxy.callExecute = mock.MagicMock(return_value=None, side_effect=self.raw.extend)
-
-  def __enter__(self):
-    return self
-
-  def __exit__(self, a, b, c):
-    pass
-
-  def getRPCProxy(self):
-    return self.proxy
-comsat.ComSat = MockComsat
+import util.communications
 
 class TestActions(unittest.TestCase):
-  def get_events(self, proxy, spec):
-    del MockComsat.raw[:]
-    key = proxy(spec)
-    key.execute()
-    return MockComsat.raw
+  @mock.patch("util.proxy_actions.communication")
+  def test_key(self, comm):
+    ProxyKey("H").execute()
+    comm.execute_batch.assert_called_with([('key_press', (), {'key': 'H', 'count': 1, 'modifiers': []})])
 
-  def test_key(self):
-    parse = partial(self.get_events, ProxyKey)
-    self.assertEqual(parse("H"), [("key", "H")])
-    self.assertEqual(parse("H, e"), [("key", "H"), ("key", "e")])
+    ProxyKey("H, e").execute()
+    comm.execute_batch.assert_called_with([('key_press', (), {'key': 'H', 'count': 1, 'modifiers': []}),
+                                           ('key_press', (), {'key': 'e', 'count': 1, 'modifiers': []})])
 
-    self.assertEqual(parse("c-Home"), [("keydown", "Control_L"), ("key", "Home"), ("keyup", "Control_L")])
-    self.assertEqual(parse("c-Home:2"), [("keydown", "Control_L"), ("key", "Home"), ("key", "Home"), ("keyup", "Control_L")])
-    self.assertEqual(parse("c-Home:2/5"), [("keydown", "Control_L"), ("key", "Home"), ("key", "Home"), ("keyup", "Control_L"), ("sleep", "5")])
-    self.assertEqual(parse("c-Home/1:2/5"), [("keydown", "Control_L"), ("key", "Home"), ("sleep", "1"), ("key", "Home"), ("keyup", "Control_L"), ("sleep", "5")])
-    self.assertEqual(parse("c-home/1:2/5"), [("keydown", "Control_L"), ("key", "Home"), ("sleep", "1"), ("key", "Home"), ("keyup", "Control_L"), ("sleep", "5")])
-    self.assertEqual(parse("Home"), [("key", "Home")])
-    self.assertEqual(parse("Home:2"), [("key", "Home")] * 2)
+    ProxyKey("c-home").execute()
+    comm.execute_batch.assert_called_with([('key_press', (), {'count': 1, 'modifiers': ['control'], 'key': 'home'})])
 
-    self.assertEqual(parse("Home:0"), [])
-  
-  def test_key_multiple_modifiers(self):
-    parse = partial(self.get_events, ProxyKey)
-    keys = parse("scaw-H")
-    mods = ("Shift_L", "Control_L", "Alt_L", "Super_L")
-    self.assertEqual(keys[4], ("key", "H"))
-    self.assertItemsEqual(keys[:4], [("keydown", mod) for mod in mods])
-    self.assertItemsEqual(keys[-4:], [("keyup", mod) for mod in mods])
-    mod_up, mod_down = [[x for x in mod_string]
-                         for mod_string in (keys[:4], keys[-4:])]
-    self.assertEqual(zip(*mod_up)[1], zip(*list(reversed(mod_down)))[1])
+    ProxyKey("c-home:2").execute()
+    comm.execute_batch.assert_called_with([('key_press', (), {'key': 'home', 'count': 2, 'modifiers': ['control']})])
 
-  def test_key_manual(self):
-    parse = partial(self.get_events, ProxyKey)
-    self.assertEqual(parse("a:up"), [("keyup", "a")])
+    ProxyKey("c-home:2/5").execute()
+    comm.execute_batch.assert_called_with([('key_press', (), {'key': 'home', 'count': 2, 'modifiers': ['control']}),
+                                           ('pause', (), {'amount': 0.05})])
 
-  def test_key_windows(self):
-    parse = partial(self.get_events, ProxyKey)
-    sequence = [("keydown", "Super_L"), ("key", "Delete"), ("keyup", "Super_L"), ("key", "greater"), ("key", "Left"),
-                ("key", "F9"), ("key", "KP_7")]
-    self.assertEqual(parse("w-del, rangle, left, f9, np7"), sequence)
+    ProxyKey("c-home/1:2/5").execute()
+    comm.execute_batch.assert_called_with([('key_press', (), {'key': 'home', 'count': 2, 'count_delay': 0.01, 'modifiers': ['control']}),
+                                           ('pause', (), {'amount': 0.05})])
 
-  def test_text(self):
-    parse = partial(self.get_events, ProxyText)
-    self.assertEqual(parse("Hello world!"), [("type", "Hello world!")])
+    ProxyKey("home").execute()
+    comm.execute_batch.assert_called_with([('key_press', (), {'key': 'home', 'count': 1, 'modifiers': []})])
 
-  def test_mouse_move(self):
-    parse = partial(self.get_events, ProxyMouse)
-    self.assertEqual(parse("[3 5]"), [("mousemove", "%f %f" % (3, 5))])
-    self.assertEqual(parse("<7 9>"), [("mousemove_relative", "%f %f" % (7, 9))])
-    self.assertEqual(parse("(3 5)"), [("mousemove_active", "%f %f" % (3, 5))])
+    ProxyKey("home:2").execute()
+    comm.execute_batch.assert_called_with([('key_press', (), {'key': 'home', 'count': 2, 'modifiers': []})])
 
-    self.assertEqual(parse(",".join(["[3 5]"] * 3)), [("mousemove", "%f %f" % (3, 5))] * 3)
+    ProxyKey("home:0").execute()
+    comm.execute_batch.assert_called_with([])
 
-  def test_mouse_click(self):
-    parse = partial(self.get_events, ProxyMouse)
-    self.assertEqual(parse("left"), [("click", "1")])
-    self.assertEqual(parse("1"), [("click", "1")])
-    self.assertEqual(parse("right"), [("click", "3")])
+  @mock.patch("util.proxy_actions.communication")
+  def test_key_multiple_modifiers(self, comm):
+    ProxyKey("scawh-H").execute()
+    comm.execute_batch.assert_called_with([('key_press', (), {'key': 'H', 'count': 1, 'modifiers': ['shift', 'control', 'alt', 'super', 'hyper']})])
 
-    self.assertEqual(parse("wheelup:5"), [("click", "4")] * 5)
-    self.assertEqual(parse("wheelup:5/9"), [("click", "4"), ("sleep", "%f" % 0.9)] * 5)
+  @mock.patch("util.proxy_actions.communication")
+  def test_key_manual(self, comm):
+    ProxyKey("a:up").execute()
+    comm.execute_batch.assert_called_with([('key_press', (), {'key': 'a', 'direction': 'up', 'modifiers': []})])
 
-  def test_mouse_drag(self):
-    parse = partial(self.get_events, ProxyMouse)
-    self.assertEqual(parse("middle:up"), [("mouseup", "2")])
+  @mock.patch("util.proxy_actions.communication")
+  def test_text(self, comm):
+    ProxyText("Hello world!").execute()
+    comm.server.write_text.assert_called_with(text="Hello world!")
+
+  @mock.patch("util.proxy_actions.communication")
+  def test_mouse_move(self, comm):
+    ProxyMouse("[3, 5]").execute()
+    comm.execute_batch.assert_called_with([('move_mouse', (), {'x': 3.0, 'y': 5.0, 'proportional': False, 'reference': 'absolute'})])
+
+    ProxyMouse("<7 9>").execute()
+    comm.execute_batch.assert_called_with([('move_mouse', (), {'x': 7.0, 'y': 9.0, 'proportional': False, 'reference': 'relative'})])
+
+    ProxyMouse("(3, 5)").execute()
+    comm.execute_batch.assert_called_with([('move_mouse', (), {'x': 3.0, 'y': 5.0, 'proportional': False, 'reference': 'relative_active'})])
+
+    ProxyMouse(",".join(["[3 5]"] * 3)).execute()
+    comm.execute_batch.assert_called_with([('move_mouse', (), {'x': 3.0, 'y': 5.0, 'proportional': False, 'reference': 'absolute'}),
+                                           ('move_mouse', (), {'x': 3.0, 'y': 5.0, 'proportional': False, 'reference': 'absolute'}),
+                                           ('move_mouse', (), {'x': 3.0, 'y': 5.0, 'proportional': False, 'reference': 'absolute'})])
+
+  @mock.patch("util.proxy_actions.communication")
+  def test_mouse_click(self, comm):
+    ProxyMouse("left").execute()
+    comm.execute_batch.assert_called_with([('click_mouse', (), {'button': 'left', 'count': 1, 'count_delay': None, 'direction': 'click'})])
+
+    ProxyMouse("right").execute()
+    comm.execute_batch.assert_called_with([('click_mouse', (), {'button': 'right', 'count': 1, 'count_delay': None, 'direction': 'click'})])
+
+    ProxyMouse("wheelup:5").execute()
+    comm.execute_batch.assert_called_with([('click_mouse', (), {'button': 'wheelup', 'count': 5, 'count_delay': None, 'direction': 'click'})])
+
+    ProxyMouse("wheeldown:5/9").execute()
+    comm.execute_batch.assert_called_with([('click_mouse', (), {'button': 'wheeldown', 'count': 5, 'direction': 'click', 'count_delay': 0.09})])
+
+  @mock.patch("util.proxy_actions.communication")
+  def test_drag(self, comm):
+    ProxyMouse("middle:up/5").execute()
+    comm.execute_batch.assert_called_with([('click_mouse', (), {'button': 'middle', 'direction': 'up', 'count_delay': 0.05, 'count': 1})])
+
+  @mock.patch("util.proxy_actions.communication")
+  def test_phantom_click(self, comm):
+    ProxyMousePhantomClick("(78, 114), left").execute()
+    comm.execute_batch.assert_called_with([('move_mouse', (), {'y': 114.0, 'x': 78.0, 'phantom': 'left', 'reference': 'relative_active', 'proportional': False})])
 
 if __name__ == '__main__':
   unittest.main()

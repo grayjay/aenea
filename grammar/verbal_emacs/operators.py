@@ -1,4 +1,4 @@
-from dragonfly import MappingRule, RuleRef, CompoundRule, Alternative
+from dragonfly import Alternative, CompoundRule, MappingRule, RuleRef
 from proxy_nicknames import Text
 
 from verbal_emacs.common import NumericDelegateRule, ruleDigitalInteger
@@ -25,7 +25,6 @@ class PrimitiveOperator(MappingRule):
   mapping = dict((key, Text(value)) for (key, value) in _OPERATORS.iteritems())
   # tComment
   mapping["comm nop"] = Text("gc")
-
 rulePrimitiveOperator = RuleRef(PrimitiveOperator(), name="PrimitiveOperator")
 
 class Operator(NumericDelegateRule):
@@ -57,15 +56,12 @@ class OperatorSelfApplication(MappingRule):
   def value(self, node):
     value = MappingRule.value(self, node)
     if value == "tcomment":
-      try:
-        # ugly hack to get around tComment's not allowing ranges with gcc.
-        value = node.children[0].children[0].children[0].children[1].value()
-        if value in (1, "1", None):
-          return Text("gcc")
-        else:
-          return Text("gc%dj" % (int(value) - 1))
-      except Exception, ex:
-        print ex
+      # ugly hack to get around tComment's not allowing ranges with gcc.
+      value = node.children[0].children[0].children[0].children[1].value()
+      if value in (1, "1", None):
+        return Text("gcc")
+      else:
+        return Text("gc%dj" % (int(value) - 1))
     else:
       return value
 

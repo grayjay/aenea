@@ -1,4 +1,14 @@
-from dragonfly import (Grammar, CompoundRule, Choice, Literal, Repetition, Text, Key, MappingRule, Alternative)
+from dragonfly import (
+    Alternative,
+    Choice,
+    CompoundRule,
+    Grammar,
+    Key,
+    Literal,
+    MappingRule,
+    Repetition,
+    Text,
+  )
 
 from raul import SelfChoice
 
@@ -16,11 +26,29 @@ if config.PLATFORM == "proxy":
   import aenea
   # Add your terminal here. Use xprop to determine its window class.
   # you can also add exclusions reprograms you don't want (eg, vim, ipython, etc)
-  grammar_context = (AppRegexContext(window_class="(Xfce4-terminal)|(XTerm)|(URxvt)") &
-                     AppRegexContext(window_class_name="(xfce4-terminal)|(xterm)|(urxvt)") &
-                     ~AppRegexContext(name=".*VIM.*") &
-                     ~AppRegexContext(name=".*/usr/bin/ipython.*") &
-                     aenea.global_context)
+  grammar_context = (
+      AppContext(
+          match="regex",
+          case_sensitive=True,
+          cls="(Xfce4-terminal)|(XTerm)|(URxvt)"
+        ) &
+      AppContext(
+          match="regex",
+          case_sensitive=True,
+          cls_name="(xfce4-terminal)|(xterm)|(urxvt)"
+        ) &
+      ~AppContext(
+          match="regex",
+          case_sensitive=True,
+          title=".*VIM.*"
+        ) &
+      ~AppContext(
+          match="regex",
+          case_sensitive=True,
+          title=".*/usr/bin/ipython.*"
+        ) &
+      aenea.global_context
+    )
   grammar = Grammar("shell", context=grammar_context)
 else:
   # Add windows-appropriate context here if desired..
