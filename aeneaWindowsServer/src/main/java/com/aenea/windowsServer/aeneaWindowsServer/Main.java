@@ -21,6 +21,7 @@ public class Main {
       System.out.println("Expecting only the ip address to bind to");
     } else {
       String mIpAddress = aArgs[0];
+      System.out.println("Using ip address: " + mIpAddress);
       Server mServer = new Server(new InetSocketAddress(mIpAddress, 8240));
       mServer.setHandler(new AbstractHandler() {
         private Dispatcher myDispatcher;
