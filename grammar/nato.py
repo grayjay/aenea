@@ -36,7 +36,7 @@ class MetaKey(CompoundRule):
         RuleRef(
             MappingRule(mapping=raul.ALPHANUMERIC_EXTENDED, name="keymap"),
             name="key"
-        )
+          ),
     ]
 
   def _process_recognition (self, node, extras):
@@ -52,5 +52,6 @@ grammar.load()
 
 def unload():
   global grammar
-  if grammar: grammar.unload()
+  if grammar:
+    grammar.unload()
   grammar = None
