@@ -131,7 +131,6 @@ Installation:
 - Run the command ``cabal update``.
 - Run ``cabal install`` in the folder ...aenea\\WindowsServer\\aenea-windows-server to create aenea.exe in cabal's bin folder.
 - aenea.exe takes optional arguments specifying the IP address and port. These should match those on C:\\NatLink\\NatLink\\MacroSystem\\aenea.json.
-- Set use_multiple_actions to false in aenea.json.
 
 Server (OS X)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

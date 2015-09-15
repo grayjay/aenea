@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE PatternGuards #-}
 {-# LANGUAGE CPP #-}
 
 module Main (main) where
@@ -16,11 +17,13 @@ import Network.JsonRpc.Server( Parameter (..)
                              , Method
                              , toMethod
                              , rpcError)
-import Data.Text (Text, unpack, append)
+import Data.Text (Text, unpack, pack, append)
 import Data.String (fromString)
 import Data.List (intersperse)
 import Data.Maybe (catMaybes, mapMaybe, fromMaybe)
-import Data.Aeson (Value (Number, String), object, (.=))
+import Data.Aeson (Value (..), eitherDecode, encode, object, (.=))
+import qualified Data.Vector as V
+import qualified Data.HashMap.Strict as H
 import qualified Data.ByteString.Lazy as LB
 import qualified Data.ByteString.Lazy.Char8 as LBChar8
 import Control.Monad ((<=<), when, forM_)
@@ -70,7 +73,7 @@ handleRequests :: Verbosity -> H.ServerPartT IO H.Response
 handleRequests verbosity = do
   request <- H.askRq
   body <- lift $ getBody request
-  printMsg "" >> printMsg body
+  printMsg $ "\n" `LB.append` body
   result <- lift $ call methods body
   let resultStr = fromMaybe "" result
   printMsg resultStr
@@ -138,11 +141,47 @@ options = [ Option "a" ["address"] (ReqArg Address "address") "specify host IP a
           , Option "h" ["help"] (NoArg Help) "show this message"]
 
 methods :: [Method IO]
-methods = [ getContextMethod
+methods = [ multipleActions
+          , getContextMethod
           , keyPressMethod
           , writeTextMethod
           , pauseMethod
           , serverInfoMethod ]
+
+multipleActions :: Method IO
+multipleActions = toMethod "multiple_actions" f $ Required "actions" :+: ()
+  where
+    f :: Value -> RpcResult IO Value
+    f input =
+        case input of
+          Array actions -> do
+              rpcs <- mapM toJsonRpcRq actions
+              result <- lift $ call methods $ encode rpcs
+              case eitherDecode <$> result of
+                Nothing -> return ""
+                Just (Left err) -> throwError $ rpcError code $ pack err
+                Just (Right r) -> return r
+          _ -> throwError $ rpcError code $ "Expected an array of actions."
+
+    code = 32001
+
+    toJsonRpcRq :: Value -> RpcResult IO Value
+    toJsonRpcRq (Array args)
+        | [String method, Array positional, Object byName] <- V.toList args =
+              let params | V.null positional = return $ Object byName
+                         | H.null byName = return $ Array positional
+                         | otherwise =
+                               throwError $ rpcError code $ pack $
+                               "Cannot handle both positional and "
+                            ++ "by-name arguments in one method call."
+              in do
+                ps <- params
+                return $ object [ "method" .= method
+                                , "params" .= ps
+                                , "jsonrpc" .= String "2.0" ]
+    toJsonRpcRq _ = throwError $ rpcError code $ pack $
+                    "Expected an array containing a method name, "
+                 ++ "positional parameters, and by-name parameters."
 
 keyPressMethod :: Method IO
 keyPressMethod = toMethod "key_press" keyPressFunction

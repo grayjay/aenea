@@ -23,7 +23,9 @@ executable aenea
                        happstack-lite >=7.3 && <7.4,
                        happstack-server >=7.3 && <7.5,
                        bytestring >=0.10 && <0.11,
-                       json-rpc-server >=0.2 && <0.3
+                       json-rpc-server >=0.2 && <0.3,
+                       unordered-containers,
+                       vector
   ghc-options:         -Wall -fno-warn-missing-signatures
   hs-source-dirs:      src
   build-tools:         hsc2hs
